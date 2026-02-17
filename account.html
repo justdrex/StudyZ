@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="page-account">
+    <nav class="navbar">
+        <div class="navbar-logo">
+            <a href="/home">
+                <img src="/assets/logo.png" alt="Logo" class="logo-img">
+            </a>
+        </div>
+        <div class="navbar-account">
+            <a href="/account" class="account-link">Account</a>
+        </div>
+    </nav>
+
+    <main class="account-wrap">
+        <header class="account-header">
+            <div>
+                <h1 class="account-title">Account settings</h1>
+            </div>
+            <div class="account-badges">
+                <span class="badge" id="badge-plan">Free</span>
+                <span class="badge badge-muted" id="badge-status">Active</span>
+            </div>
+        </header>
+
+        <section class="account-grid">
+            <div class="panel">
+                <div class="panel-head">
+                    <h2>Profile</h2>
+                    <p>Your basic account information.</p>
+                </div>
+
+                <div class="profile-row">
+                    <div class="avatar" id="avatar">U</div>
+                    <div class="profile-meta">
+                        <div class="profile-name" id="profileNamePreview">User</div>
+                        <div class="profile-email" id="profileEmailPreview">user@example.com</div>
+                    </div>
+                </div>
+
+                <form id="profileForm" class="form">
+                    <div class="form-row">
+                        <label>
+                            <span>Display name</span>
+                            <input id="profileName" type="text" placeholder="e.g. Adam Novák" autocomplete="name">
+                        </label>
+                        <label>
+                            <span>Email</span>
+                            <input id="profileEmail" type="email" placeholder="e.g. adam@email.com" autocomplete="email">
+                        </label>
+                    </div>
+
+                    <div class="form-row">
+                        <label>
+                            <span>Bio (optional)</span>
+                            <textarea id="profileBio" rows="3" placeholder="What are you learning right now?"></textarea>
+                        </label>
+                    </div>
+
+                    <div class="actions">
+                        <button type="button" class="btn btn-secondary" id="resetProfile">Reset</button>
+                        <button type="submit" class="btn" id="saveProfile">Save profile</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="panel">
+                <div class="panel-head">
+                    <h2>Subscription</h2>
+                    <p>Manage plan and billing placeholders (no payments implemented).</p>
+                </div>
+
+                <div class="sub-cards">
+                    <button class="sub-card" type="button" data-plan="Free">
+                        <div class="sub-card-title">Free</div>
+                        <div class="sub-card-desc">Basic features</div>
+                    </button>
+                    <button class="sub-card" type="button" data-plan="Pro">
+                        <div class="sub-card-title">Pro</div>
+                        <div class="sub-card-desc">More learning tools</div>
+                    </button>
+                    <button class="sub-card" type="button" data-plan="Student">
+                        <div class="sub-card-title">Student</div>
+                        <div class="sub-card-desc">Discounted plan</div>
+                    </button>
+                </div>
+
+                <div class="kv">
+                    <div class="kv-row">
+                        <div class="kv-key">Current plan</div>
+                        <div class="kv-value" id="currentPlan">Free</div>
+                    </div>
+                    <div class="kv-row">
+                        <div class="kv-key">Renewal</div>
+                        <div class="kv-value" id="renewalDate">—</div>
+                    </div>
+                    <div class="kv-row">
+                        <div class="kv-key">Status</div>
+                        <div class="kv-value" id="subStatus">Active</div>
+                    </div>
+                </div>
+
+                <div class="actions">
+                    <button type="button" class="btn btn-secondary" id="cancelSub">Cancel</button>
+                    <button type="button" class="btn" id="restoreSub">Restore</button>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-head">
+                    <h2>Learning preferences</h2>
+                    <p>Small settings for your learning flow.</p>
+                </div>
+
+                <form id="prefsForm" class="form">
+                    <div class="form-row">
+                        <label>
+                            <span>Default language</span>
+                            <select id="prefLang">
+                                <option value="cs">Czech (cs)</option>
+                                <option value="en">English (en)</option>
+                            </select>
+                        </label>
+                        <label>
+                            <span>Daily goal (minutes)</span>
+                            <input id="prefGoal" type="number" min="5" max="300" step="5" value="20">
+                        </label>
+                    </div>
+
+                    <div class="checks">
+                        <label class="check">
+                            <input id="prefReminders" type="checkbox">
+                            <span>Enable reminders</span>
+                        </label>
+                        <label class="check">
+                            <input id="prefSounds" type="checkbox">
+                            <span>Sounds</span>
+                        </label>
+                    </div>
+
+                    <div class="actions">
+                        <button type="button" class="btn btn-secondary" id="resetPrefs">Reset</button>
+                        <button type="submit" class="btn">Save preferences</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="panel">
+                <div class="panel-head">
+                    <h2>Latest learning prompts</h2>
+                    <p>Saved automatically from the home textbox (last 20).</p>
+                </div>
+
+                <div class="prompt-list" id="promptList"></div>
+
+                <div class="actions">
+                    <button type="button" class="btn btn-secondary" id="clearPrompts">Clear prompts</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const STORAGE_KEYS = {
+            profile: "studyz_profile_v1",
+            subscription: "studyz_subscription_v1",
+            prefs: "studyz_prefs_v1",
+            prompts: "studyz_recentPrompts_v1"
+        };
+
+        function safeJsonParse(value, fallback) {
+            try {
+                return value ? JSON.parse(value) : fallback;
+            } catch {
+                return fallback;
+            }
+        }
+
+        function formatDate(iso) {
+            if (!iso) return "—";
+            const d = new Date(iso);
+            if (Number.isNaN(d.getTime())) return "—";
+            return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "2-digit" });
+        }
+
+        function initials(nameOrEmail) {
+            const s = (nameOrEmail || "").trim();
+            if (!s) return "U";
+            const parts = s.split(/\s+/).filter(Boolean);
+            if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+            return s.slice(0, 2).toUpperCase();
+        }
+
+        function setText(id, text) {
+            const el = document.getElementById(id);
+            if (el) el.textContent = text;
+        }
+
+        function loadProfile() {
+            const data = safeJsonParse(localStorage.getItem(STORAGE_KEYS.profile), {
+                name: "",
+                email: "",
+                bio: ""
+            });
+
+            document.getElementById("profileName").value = data.name || "";
+            document.getElementById("profileEmail").value = data.email || "";
+            document.getElementById("profileBio").value = data.bio || "";
+
+            const previewName = data.name?.trim() || "User";
+            const previewEmail = data.email?.trim() || "user@example.com";
+
+            setText("profileNamePreview", previewName);
+            setText("profileEmailPreview", previewEmail);
+            setText("avatar", initials(data.name || data.email));
+        }
+
+        function saveProfile() {
+            const payload = {
+                name: document.getElementById("profileName").value.trim(),
+                email: document.getElementById("profileEmail").value.trim(),
+                bio: document.getElementById("profileBio").value.trim()
+            };
+            localStorage.setItem(STORAGE_KEYS.profile, JSON.stringify(payload));
+            loadProfile();
+        }
+
+        function loadSubscription() {
+            const data = safeJsonParse(localStorage.getItem(STORAGE_KEYS.subscription), {
+                plan: "Free",
+                status: "Active",
+                renewalIso: ""
+            });
+
+            setText("currentPlan", data.plan || "Free");
+            setText("subStatus", data.status || "Active");
+            setText("renewalDate", formatDate(data.renewalIso));
+
+            setText("badge-plan", data.plan || "Free");
+            setText("badge-status", data.status || "Active");
+
+            document.querySelectorAll(".sub-card").forEach(btn => {
+                btn.classList.toggle("is-active", btn.dataset.plan === data.plan);
+            });
+        }
+
+        function saveSubscription(next) {
+            const current = safeJsonParse(localStorage.getItem(STORAGE_KEYS.subscription), {
+                plan: "Free",
+                status: "Active",
+                renewalIso: ""
+            });
+            const merged = { ...current, ...next };
+            localStorage.setItem(STORAGE_KEYS.subscription, JSON.stringify(merged));
+            loadSubscription();
+        }
+
+        function loadPrefs() {
+            const data = safeJsonParse(localStorage.getItem(STORAGE_KEYS.prefs), {
+                lang: "cs",
+                goalMinutes: 20,
+                reminders: false,
+                sounds: false
+            });
+
+            document.getElementById("prefLang").value = data.lang || "cs";
+            document.getElementById("prefGoal").value = Number(data.goalMinutes || 20);
+            document.getElementById("prefReminders").checked = Boolean(data.reminders);
+            document.getElementById("prefSounds").checked = Boolean(data.sounds);
+        }
+
+        function savePrefs() {
+            const payload = {
+                lang: document.getElementById("prefLang").value,
+                goalMinutes: Number(document.getElementById("prefGoal").value || 20),
+                reminders: document.getElementById("prefReminders").checked,
+                sounds: document.getElementById("prefSounds").checked
+            };
+            localStorage.setItem(STORAGE_KEYS.prefs, JSON.stringify(payload));
+            loadPrefs();
+        }
+
+        function loadPrompts() {
+            const prompts = safeJsonParse(localStorage.getItem(STORAGE_KEYS.prompts), []);
+            const wrap = document.getElementById("promptList");
+            wrap.innerHTML = "";
+
+            if (!Array.isArray(prompts) || prompts.length === 0) {
+                const empty = document.createElement("div");
+                empty.className = "prompt-empty";
+                empty.textContent = "No prompts yet. Type something on the home page and press Enter.";
+                wrap.appendChild(empty);
+                return;
+            }
+
+            prompts.slice(0, 20).forEach((p) => {
+                const row = document.createElement("div");
+                row.className = "prompt-item";
+
+                const text = document.createElement("div");
+                text.className = "prompt-text";
+                text.textContent = p?.text || "";
+
+                const meta = document.createElement("div");
+                meta.className = "prompt-meta";
+                meta.textContent = formatDate(p?.iso);
+
+                row.appendChild(text);
+                row.appendChild(meta);
+                wrap.appendChild(row);
+            });
+        }
+
+        // wire up
+        document.getElementById("profileForm").addEventListener("submit", (e) => {
+            e.preventDefault();
+            saveProfile();
+        });
+        document.getElementById("resetProfile").addEventListener("click", () => {
+            localStorage.removeItem(STORAGE_KEYS.profile);
+            loadProfile();
+        });
+
+        document.querySelectorAll(".sub-card").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const plan = btn.dataset.plan || "Free";
+                const renewal = new Date();
+                renewal.setDate(renewal.getDate() + 30);
+                saveSubscription({ plan, status: "Active", renewalIso: renewal.toISOString() });
+            });
+        });
+        document.getElementById("cancelSub").addEventListener("click", () => {
+            saveSubscription({ status: "Cancelled", renewalIso: "" });
+        });
+        document.getElementById("restoreSub").addEventListener("click", () => {
+            const renewal = new Date();
+            renewal.setDate(renewal.getDate() + 30);
+            saveSubscription({ status: "Active", renewalIso: renewal.toISOString() });
+        });
+
+        document.getElementById("prefsForm").addEventListener("submit", (e) => {
+            e.preventDefault();
+            savePrefs();
+        });
+        document.getElementById("resetPrefs").addEventListener("click", () => {
+            localStorage.removeItem(STORAGE_KEYS.prefs);
+            loadPrefs();
+        });
+
+        document.getElementById("clearPrompts").addEventListener("click", () => {
+            localStorage.removeItem(STORAGE_KEYS.prompts);
+            loadPrompts();
+        });
+
+        loadProfile();
+        loadSubscription();
+        loadPrefs();
+        loadPrompts();
+    </script>
+</body>
+</html>
