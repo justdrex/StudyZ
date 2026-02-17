@@ -10,6 +10,8 @@ const server = http.createServer((req, res) => {
     serveHTML("index.html", res);
   } else if (url === "/games") {
     serveHTML("games.html", res);
+  } else if (url === "/account") {
+    serveHTML("account.html", res);
   }
   // STATIC FILES
   else if (url.startsWith("/assets/") || url === "/script.js" || url === "/styles.css") {

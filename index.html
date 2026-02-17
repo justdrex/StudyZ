@@ -7,9 +7,139 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="container">
-        <h1 class="heading">Type here for quick learning</h1>
-        <textarea class="input-box" placeholder="Start typing..." rows="8"></textarea>
+    <nav class="navbar">
+        <div class="navbar-logo">
+            <a href="/home">
+                <img src="/assets/logo.png" alt="Logo" class="logo-img">
+            </a>
+        </div>
+        <div class="navbar-account">
+            <a href="/account" class="account-link">Account</a>
+        </div>
+    </nav>
+    <div class="input-container">
+        <h1 class="heading">What would you like to learn today?</h1>
+        <textarea class="input-box" id="input-box" placeholder="Start typing..." rows="8"></textarea>
+
+        <!-- Minimal attachments (bottom-left inside container) -->
+        <div class="attach-dock" aria-label="Add attachment">
+            <input id="fileInput" class="attach-input" type="file" multiple>
+            <button type="button" class="clip-btn" id="clipBtn" aria-label="Add up to 3 files">
+                <img src="/assets/cliplogo.png" alt="" class="clip-icon">
+            </button>
+            <div class="clip-filename" id="clipFilename" aria-live="polite"></div>
+        </div>
     </div>
+    <script>
+        // Minimal attachments state
+        /** @type {File[]} */
+        let attachedFiles = [];
+        let attachedScreenshot = null; // { name, dataUrl, size }
+
+        function setFilenameLabel() {
+          const el = document.getElementById("clipFilename");
+          if (!el) return;
+          el.textContent = attachedFiles.length ? attachedFiles.map(f => f.name).join("\n") : "";
+        }
+
+        async function blobToThumbDataUrl(blob, maxW = 640, maxH = 640, quality = 0.82) {
+          const img = new Image();
+          const url = URL.createObjectURL(blob);
+          try {
+            await new Promise((res, rej) => {
+              img.onload = () => res();
+              img.onerror = rej;
+              img.src = url;
+            });
+
+            const ratio = Math.min(maxW / img.width, maxH / img.height, 1);
+            const w = Math.round(img.width * ratio);
+            const h = Math.round(img.height * ratio);
+
+            const canvas = document.createElement("canvas");
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0, w, h);
+
+            return canvas.toDataURL("image/jpeg", quality);
+          } finally {
+            URL.revokeObjectURL(url);
+          }
+        }
+
+        const fileInput = document.getElementById("fileInput");
+        document.getElementById("clipBtn").addEventListener("click", () => fileInput.click());
+        fileInput.addEventListener("change", (e) => {
+          const files = e.target.files ? Array.from(e.target.files) : [];
+
+          const keyOf = (f) => `${f.name}::${f.size}::${f.lastModified}`;
+          const existing = new Set(attachedFiles.map(keyOf));
+
+          for (const f of files) {
+            if (attachedFiles.length >= 3) break;
+            const k = keyOf(f);
+            if (existing.has(k)) continue;
+            existing.add(k);
+            attachedFiles.push(f);
+          }
+
+          // allow selecting same file again later if needed
+          e.target.value = "";
+          setFilenameLabel();
+        });
+
+        const inputBox = document.getElementById("input-box");
+
+        // Ctrl+V screenshot into textarea
+        inputBox.addEventListener("paste", async (e) => {
+          const items = e.clipboardData && e.clipboardData.items ? Array.from(e.clipboardData.items) : [];
+          const imgItem = items.find(i => i.type && i.type.startsWith("image/"));
+          if (!imgItem) return; // allow normal paste
+
+          e.preventDefault();
+          const blob = imgItem.getAsFile();
+          if (!blob) return;
+
+          const name = `screenshot-${Date.now()}.jpg`;
+          const thumb = await blobToThumbDataUrl(blob);
+          attachedScreenshot = { name, dataUrl: thumb, size: blob.size || 0 };
+        });
+
+        setFilenameLabel();
+
+        // Save prompt + redirect
+        inputBox.addEventListener('keypress', function(e) {
+          if (e.key === 'Enter') {
+            const inputValue = this.value.trim();
+            if (inputValue) {
+              // store latest prompts (last 20)
+              const key = "studyz_recentPrompts_v1";
+              let items = [];
+              try {
+                items = JSON.parse(localStorage.getItem(key) || "[]");
+              } catch {
+                items = [];
+              }
+              if (!Array.isArray(items)) items = [];
+
+              const attachments = [];
+              for (const f of attachedFiles) {
+                attachments.push({ kind: "file", name: f.name, size: f.size });
+              }
+              if (attachedScreenshot) {
+                attachments.push({ kind: "screenshot", name: attachedScreenshot.name, size: attachedScreenshot.size, thumbDataUrl: attachedScreenshot.dataUrl });
+              }
+
+              items.unshift({ text: inputValue, iso: new Date().toISOString(), attachments });
+              items = items.slice(0, 20);
+              localStorage.setItem(key, JSON.stringify(items));
+
+              // Přesměrování na jinou stránku - můžete změnit URL podle potřeby
+              window.location.href = '/games';
+            }
+          }
+        });
+      </script>
 </body>
 </html>
