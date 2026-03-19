@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fill in the Blank</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-logo">
+            <a href="/home">
+                <img src="/assets/logo.png" alt="Logo" class="logo-img">
+            </a>
+        </div>
+        <div class="navbar-account">
+            <a href="/account" class="account-link">Account</a>
+        </div>
+    </nav>
+
+    <div class="blank-container">
+        <div class="blank-card">
+            <p class="blank-sentence" id="blankSentence"></p>
+            <input type="text" class="blank-input" id="blankInput" placeholder="Type your answer...">
+            <button class="blank-check-btn" id="checkBtn">Check</button>
+            <div class="blank-feedback" id="blankFeedback"></div>
+        </div>
+
+        <div class="flashcard-nav">
+            <button class="nav-btn" id="prevBtn">&#8592;</button>
+            <span class="card-counter" id="cardCounter">1 / 10</span>
+            <button class="nav-btn" id="nextBtn">&#8594;</button>
+        </div>
+    </div>
+
+    <script>
+        const blanks = [
+            { sentence: "The capital of France is _____.", answer: "Paris" },
+            { sentence: "Water is made of hydrogen and _____.", answer: "oxygen" },
+            { sentence: "The largest planet in the solar system is _____.", answer: "Jupiter" },
+            { sentence: "Shakespeare wrote _____ and Juliet.", answer: "Romeo" },
+            { sentence: "The chemical symbol for gold is _____.", answer: "Au" },
+            { sentence: "There are _____ continents on Earth.", answer: "7" },
+            { sentence: "The _____ Ocean is the largest ocean on Earth.", answer: "Pacific" },
+            { sentence: "The human body has _____ bones.", answer: "206" },
+            { sentence: "The capital of Japan is _____.", answer: "Tokyo" },
+            { sentence: "The chemical symbol for water is _____.", answer: "H2O" },
+        ];
+
+        let current = 0;
+
+        function showBlank(index) {
+            const { sentence } = blanks[index];
+            const display = sentence.replace('_____', '<span class="blank-slot">_____</span>');
+            document.getElementById('blankSentence').innerHTML = display;
+            document.getElementById('blankInput').value = '';
+            document.getElementById('blankInput').disabled = false;
+            document.getElementById('checkBtn').disabled = false;
+            document.getElementById('blankFeedback').textContent = '';
+            document.getElementById('blankFeedback').className = 'blank-feedback';
+            document.getElementById('cardCounter').textContent = `${index + 1} / ${blanks.length}`;
+            document.getElementById('blankInput').focus();
+        }
+
+        function checkAnswer() {
+            const input = document.getElementById('blankInput');
+            const feedback = document.getElementById('blankFeedback');
+            const userAnswer = input.value.trim();
+            const correct = blanks[current].answer;
+
+            if (!userAnswer) return;
+
+            input.disabled = true;
+            document.getElementById('checkBtn').disabled = true;
+
+            if (userAnswer.toLowerCase() === correct.toLowerCase()) {
+                feedback.textContent = 'Correct!';
+                feedback.className = 'blank-feedback correct';
+            } else {
+                feedback.textContent = `Wrong. The correct answer is: ${correct}`;
+                feedback.className = 'blank-feedback wrong';
+            }
+        }
+
+        document.getElementById('checkBtn').addEventListener('click', checkAnswer);
+
+        document.getElementById('blankInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') checkAnswer();
+        });
+
+        document.getElementById('prevBtn').addEventListener('click', () => {
+            current = (current - 1 + blanks.length) % blanks.length;
+            showBlank(current);
+        });
+
+        document.getElementById('nextBtn').addEventListener('click', () => {
+            current = (current + 1) % blanks.length;
+            showBlank(current);
+        });
+
+        showBlank(0);
+    </script>
+</body>
+</html>

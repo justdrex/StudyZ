@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flashcards</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-logo">
+            <a href="/home">
+                <img src="/assets/logo.png" alt="Logo" class="logo-img">
+            </a>
+        </div>
+        <div class="navbar-account">
+            <a href="/account" class="account-link">Account</a>
+        </div>
+    </nav>
+
+    <div class="flashcards-container">
+        <div class="card-inner">
+            <div class="card">
+                <div class="card-front">What is the capital of France?</div>
+                <div class="card-back">Paris</div>
+            </div>
+            <div class="card">
+                <div class="card-front">What is the capital of Germany?</div>
+                <div class="card-back">Berlin</div>
+            </div>
+            <div class="card">
+                <div class="card-front">What is the largest planet in the solar system?</div>
+                <div class="card-back">Jupiter</div>
+            </div>
+            <div class="card">
+                <div class="card-front">What is the chemical symbol for water?</div>
+                <div class="card-back">H₂O</div>
+            </div>
+            <div class="card">
+                <div class="card-front">Who wrote Romeo and Juliet?</div>
+                <div class="card-back">William Shakespeare</div>
+            </div>
+            <div class="card">
+                <div class="card-front">What is the speed of light?</div>
+                <div class="card-back">~299,792 km/s</div>
+            </div>
+            <div class="card">
+                <div class="card-front">How many continents are there?</div>
+                <div class="card-back">7</div>
+            </div>
+            <div class="card">
+                <div class="card-front">What is the largest ocean?</div>
+                <div class="card-back">Pacific Ocean</div>
+            </div>
+            <div class="card">
+                <div class="card-front">What is the capital of Japan?</div>
+                <div class="card-back">Tokyo</div>
+            </div>
+            <div class="card">
+                <div class="card-front">How many bones are in the human body?</div>
+                <div class="card-back">206</div>
+            </div>
+        </div>
+
+        <div class="flashcard-nav">
+            <button class="nav-btn" id="prevBtn">&#8592;</button>
+            <span class="card-counter" id="cardCounter">1 / 10</span>
+            <button class="nav-btn" id="nextBtn">&#8594;</button>
+        </div>
+    </div>
+</body>
+<script>
+    const cards = document.querySelectorAll('.flashcards-container .card');
+    let current = 0;
+
+    function showCard(index) {
+        cards.forEach((card, i) => {
+            card.classList.remove('flipped');
+            card.style.display = i === index ? 'block' : 'none';
+        });
+        document.getElementById('cardCounter').textContent = `${index + 1} / ${cards.length}`;
+    }
+
+    cards.forEach(card => {
+        card.addEventListener('click', () => {
+            card.classList.toggle('flipped');
+        });
+    });
+
+    document.getElementById('prevBtn').addEventListener('click', () => {
+        current = (current - 1 + cards.length) % cards.length;
+        showCard(current);
+    });
+
+    document.getElementById('nextBtn').addEventListener('click', () => {
+        current = (current + 1) % cards.length;
+        showCard(current);
+    });
+
+    showCard(0);
+</script>
+</html>

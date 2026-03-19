@@ -517,11 +517,199 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    cursor: pointer;
   }
 
   .card:hover {
     transform: translateY(-5px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Flashcard flip */
+  .flashcards-container .card-inner {
+    perspective: 1000px;
+  }
+
+  .flashcards-container .card {
+    background: transparent;
+    overflow: visible;
+    transform-style: preserve-3d;
+    transition: transform 0.6s ease;
+    padding: 0;
+    width: 460px;
+    min-height: 300px;
+  }
+
+  .flashcards-container .card:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .flashcards-container .card.flipped {
+    transform: rotateY(180deg);
+  }
+
+  .card-front,
+  .card-back {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    border-radius: 16px;
+    padding: 40px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #111;
+    text-align: center;
+  }
+
+  .card-front {
+    background: white;
+  }
+
+  .card-back {
+    background: white;
+    transform: rotateY(180deg);
+  }
+
+  .flashcard-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    margin-top: 28px;
+  }
+
+  .nav-btn {
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 10px;
+    width: 44px;
+    height: 44px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    transition: transform 0.08s ease, box-shadow 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+
+  .nav-btn:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.14);
+  }
+
+  .nav-btn:active {
+    transform: translateY(1px);
+  }
+
+  .card-counter {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #333;
+    min-width: 50px;
+    text-align: center;
+  }
+
+  /* Fill in the blank */
+  .blank-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .blank-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    padding: 50px 50px 40px;
+    width: 460px;
+    min-height: 300px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    text-align: center;
+  }
+
+  .blank-sentence {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #111;
+    line-height: 1.6;
+  }
+
+  .blank-slot {
+    display: inline-block;
+    border-bottom: 2px solid #111;
+    min-width: 80px;
+    color: transparent;
+  }
+
+  .blank-input {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 1rem;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: 10px;
+    outline: none;
+    text-align: center;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    font-family: inherit;
+  }
+
+  .blank-input:focus {
+    border-color: rgba(0, 0, 0, 0.35);
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.08);
+  }
+
+  .blank-input:disabled {
+    background: #f5f5f5;
+    cursor: not-allowed;
+  }
+
+  .blank-check-btn {
+    padding: 10px 28px;
+    background: #111;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.2s ease, transform 0.08s ease;
+    font-family: inherit;
+  }
+
+  .blank-check-btn:hover {
+    opacity: 0.88;
+  }
+
+  .blank-check-btn:active {
+    transform: translateY(1px);
+  }
+
+  .blank-check-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .blank-feedback {
+    font-size: 1rem;
+    font-weight: 600;
+    min-height: 24px;
+  }
+
+  .blank-feedback.correct {
+    color: #16a34a;
+  }
+
+  .blank-feedback.wrong {
+    color: #dc2626;
   }
 
   .card-logo {
