@@ -127,12 +127,17 @@
         })();
 
         // Save prompt to Supabase + redirect
-        inputBox.addEventListener('keypress', function(e) {
+        inputBox.addEventListener('keypress', async function(e) {
           if (e.key === 'Enter') {
             const inputValue = this.value.trim();
             if (inputValue) {
               if (currentSession) {
-                sb.from('prompts').insert({ user_id: currentSession.user.id, text: inputValue });
+                try {
+                  await Promise.race([
+                    sb.from('prompts').insert({ user_id: currentSession.user.id, text: inputValue }),
+                    new Promise(resolve => setTimeout(resolve, 2000))
+                  ]);
+                } catch (_) {}
               }
               window.location.href = '/games';
             }
