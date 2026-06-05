@@ -33,7 +33,21 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script>
+        const sb = supabase.createClient(
+            'https://dldbcbixsysxcvthtrqs.supabase.co',
+            'sb_publishable_woDI3ajr1Wgo9usOnQoCmg_QM9ncX7E'
+        );
+        let sessionSaved = false;
+        async function saveGameSession(gameType, score, total) {
+            if (sessionSaved) return;
+            sessionSaved = true;
+            const { data: { session } } = await sb.auth.getSession();
+            if (!session) return;
+            await sb.from('game_sessions').insert({ user_id: session.user.id, game_type: gameType, score, total });
+        }
+
         const blanks = [
             { sentence: "The capital of France is _____.", answer: "Paris" },
             { sentence: "Water is made of hydrogen and _____.", answer: "oxygen" },
@@ -47,6 +61,7 @@
             { sentence: "The chemical symbol for water is _____.", answer: "H2O" },
         ];
 
+        const results = new Array(blanks.length).fill(null);
         let current = 0;
 
         function showBlank(index) {
@@ -73,12 +88,17 @@
             input.disabled = true;
             document.getElementById('checkBtn').disabled = true;
 
-            if (userAnswer.toLowerCase() === correct.toLowerCase()) {
+            const isCorrect = userAnswer.toLowerCase() === correct.toLowerCase();
+            results[current] = isCorrect;
+            if (isCorrect) {
                 feedback.textContent = 'Correct!';
                 feedback.className = 'blank-feedback correct';
             } else {
                 feedback.textContent = `Wrong. The correct answer is: ${correct}`;
                 feedback.className = 'blank-feedback wrong';
+            }
+            if (results.every(r => r !== null)) {
+                saveGameSession('blank', results.filter(Boolean).length, blanks.length);
             }
         }
 

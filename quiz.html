@@ -32,7 +32,21 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script>
+        const sb = supabase.createClient(
+            'https://dldbcbixsysxcvthtrqs.supabase.co',
+            'sb_publishable_woDI3ajr1Wgo9usOnQoCmg_QM9ncX7E'
+        );
+        let sessionSaved = false;
+        async function saveGameSession(gameType, score, total) {
+            if (sessionSaved) return;
+            sessionSaved = true;
+            const { data: { session } } = await sb.auth.getSession();
+            if (!session) return;
+            await sb.from('game_sessions').insert({ user_id: session.user.id, game_type: gameType, score, total });
+        }
+
         const questions = [
             { q: "What is the capital of France?", opts: ["London", "Berlin", "Paris", "Madrid"], a: 2 },
             { q: "What is the largest planet in the solar system?", opts: ["Saturn", "Jupiter", "Neptune", "Uranus"], a: 1 },
@@ -73,6 +87,9 @@
                         answered[index] = i;
                         if (i === q.a) score++;
                         showQuestion(index);
+                        if (answered.filter(a => a !== null).length === questions.length) {
+                            saveGameSession('quiz', score, questions.length);
+                        }
                     });
                 }
                 optionsEl.appendChild(btn);

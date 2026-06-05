@@ -69,8 +69,23 @@
         </div>
     </div>
 </body>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
+    const sb = supabase.createClient(
+        'https://dldbcbixsysxcvthtrqs.supabase.co',
+        'sb_publishable_woDI3ajr1Wgo9usOnQoCmg_QM9ncX7E'
+    );
+    let sessionSaved = false;
+    async function saveGameSession(gameType, score, total) {
+        if (sessionSaved) return;
+        sessionSaved = true;
+        const { data: { session } } = await sb.auth.getSession();
+        if (!session) return;
+        await sb.from('game_sessions').insert({ user_id: session.user.id, game_type: gameType, score, total });
+    }
+
     const cards = document.querySelectorAll('.flashcards-container .card');
+    const seen = new Set();
     let current = 0;
 
     function showCard(index) {
@@ -79,6 +94,10 @@
             card.style.display = i === index ? 'block' : 'none';
         });
         document.getElementById('cardCounter').textContent = `${index + 1} / ${cards.length}`;
+        seen.add(index);
+        if (seen.size === cards.length) {
+            saveGameSession('flashcards', 0, cards.length);
+        }
     }
 
     cards.forEach(card => {

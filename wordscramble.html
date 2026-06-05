@@ -33,7 +33,21 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script>
+        const sb = supabase.createClient(
+            'https://dldbcbixsysxcvthtrqs.supabase.co',
+            'sb_publishable_woDI3ajr1Wgo9usOnQoCmg_QM9ncX7E'
+        );
+        let sessionSaved = false;
+        async function saveGameSession(gameType, score, total) {
+            if (sessionSaved) return;
+            sessionSaved = true;
+            const { data: { session } } = await sb.auth.getSession();
+            if (!session) return;
+            await sb.from('game_sessions').insert({ user_id: session.user.id, game_type: gameType, score, total });
+        }
+
         const words = [
             { word: "Paris", hint: "Capital of France" },
             { word: "Jupiter", hint: "Largest planet in the solar system" },
@@ -63,6 +77,7 @@
         }
 
         const scrambled = words.map(w => scramble(w.word));
+        const results = new Array(words.length).fill(null);
         let current = 0;
 
         function showWord(index) {
@@ -85,12 +100,17 @@
             const correct = words[current].word;
             input.disabled = true;
             document.getElementById('checkBtn').disabled = true;
-            if (userAnswer.toLowerCase() === correct.toLowerCase()) {
+            const isCorrect = userAnswer.toLowerCase() === correct.toLowerCase();
+            results[current] = isCorrect;
+            if (isCorrect) {
                 feedback.textContent = 'Correct!';
                 feedback.className = 'blank-feedback correct';
             } else {
                 feedback.textContent = `Wrong. The correct word is: ${correct}`;
                 feedback.className = 'blank-feedback wrong';
+            }
+            if (results.every(r => r !== null)) {
+                saveGameSession('wordscramble', results.filter(Boolean).length, words.length);
             }
         }
 
