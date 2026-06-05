@@ -107,13 +107,17 @@
 
         setFilenameLabel();
 
-        // Auth-aware navbar
+        const sb = supabase.createClient(
+            'https://dldbcbixsysxcvthtrqs.supabase.co',
+            'sb_publishable_woDI3ajr1Wgo9usOnQoCmg_QM9ncX7E'
+        );
+
+        let currentSession = null;
+
+        // Auth-aware navbar + cache session for prompt saving
         (async () => {
-            const sbClient = supabase.createClient(
-                'https://dldbcbixsysxcvthtrqs.supabase.co',
-                'sb_publishable_woDI3ajr1Wgo9usOnQoCmg_QM9ncX7E'
-            );
-            const { data: { session } } = await sbClient.auth.getSession();
+            const { data: { session } } = await sb.auth.getSession();
+            currentSession = session;
             const nav = document.getElementById('navAccount');
             if (session) {
                 nav.innerHTML = '<a href="/account" class="account-link">Account</a>';
@@ -122,34 +126,14 @@
             }
         })();
 
-        // Save prompt + redirect
+        // Save prompt to Supabase + redirect
         inputBox.addEventListener('keypress', function(e) {
           if (e.key === 'Enter') {
             const inputValue = this.value.trim();
             if (inputValue) {
-              // store latest prompts (last 20)
-              const key = "studyz_recentPrompts_v1";
-              let items = [];
-              try {
-                items = JSON.parse(localStorage.getItem(key) || "[]");
-              } catch {
-                items = [];
+              if (currentSession) {
+                sb.from('prompts').insert({ user_id: currentSession.user.id, text: inputValue });
               }
-              if (!Array.isArray(items)) items = [];
-
-              const attachments = [];
-              for (const f of attachedFiles) {
-                attachments.push({ kind: "file", name: f.name, size: f.size });
-              }
-              if (attachedScreenshot) {
-                attachments.push({ kind: "screenshot", name: attachedScreenshot.name, size: attachedScreenshot.size, thumbDataUrl: attachedScreenshot.dataUrl });
-              }
-
-              items.unshift({ text: inputValue, iso: new Date().toISOString(), attachments });
-              items = items.slice(0, 20);
-              localStorage.setItem(key, JSON.stringify(items));
-
-              // Přesměrování na jinou stránku - můžete změnit URL podle potřeby
               window.location.href = '/games';
             }
           }
