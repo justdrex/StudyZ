@@ -13,9 +13,7 @@
                 <img src="/assets/logo.png" alt="Logo" class="logo-img">
             </a>
         </div>
-        <div class="navbar-account">
-            <a href="/account" class="account-link">Account</a>
-        </div>
+        <div class="navbar-account" id="navAccount"></div>
     </nav>
     <div class="input-container">
         <h1 class="heading">What would you like to learn today?</h1>
@@ -30,6 +28,7 @@
             <div class="clip-filename" id="clipFilename" aria-live="polite"></div>
         </div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script>
         // Minimal attachments state
         /** @type {File[]} */
@@ -107,6 +106,21 @@
         });
 
         setFilenameLabel();
+
+        // Auth-aware navbar
+        (async () => {
+            const sbClient = supabase.createClient(
+                'https://dldbcbixsysxcvthtrqs.supabase.co',
+                'sb_publishable_woDI3ajr1Wgo9usOnQoCmg_QM9ncX7E'
+            );
+            const { data: { session } } = await sbClient.auth.getSession();
+            const nav = document.getElementById('navAccount');
+            if (session) {
+                nav.innerHTML = '<a href="/account" class="account-link">Account</a>';
+            } else {
+                nav.innerHTML = '<a href="/login" class="account-link">Sign in</a>';
+            }
+        })();
 
         // Save prompt + redirect
         inputBox.addEventListener('keypress', function(e) {

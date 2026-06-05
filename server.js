@@ -22,6 +22,10 @@ const server = http.createServer((req, res) => {
     serveHTML("match.html", res);
   } else if (url === "/wordscramble") {
     serveHTML("wordscramble.html", res);
+  } else if (url === "/login") {
+    serveHTML("login.html", res);
+  } else if (url === "/signup") {
+    serveHTML("signup.html", res);
   }
   // STATIC FILES
   else if (url.startsWith("/assets/") || url === "/script.js" || url === "/styles.css") {
