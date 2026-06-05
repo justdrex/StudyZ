@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Match Game</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-logo">
+            <a href="/home">
+                <img src="/assets/logo.png" alt="Logo" class="logo-img">
+            </a>
+        </div>
+        <div class="navbar-account">
+            <a href="/account" class="account-link">Account</a>
+        </div>
+    </nav>
+
+    <div class="match-container">
+        <div class="match-board">
+            <div class="match-col" id="termsCol"></div>
+            <div class="match-col" id="defsCol"></div>
+        </div>
+        <p class="match-status" id="matchStatus"></p>
+        <button class="blank-check-btn" id="restartBtn">Restart</button>
+    </div>
+
+    <script>
+        const pairs = [
+            { term: "Capital of France", def: "Paris" },
+            { term: "Largest planet", def: "Jupiter" },
+            { term: "Symbol for water", def: "H₂O" },
+            { term: "Wrote Romeo and Juliet", def: "Shakespeare" },
+            { term: "Largest ocean", def: "Pacific" },
+            { term: "Capital of Japan", def: "Tokyo" },
+            { term: "Bones in human body", def: "206" },
+            { term: "Symbol for gold", def: "Au" },
+        ];
+
+        function shuffle(arr) {
+            const a = [...arr];
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
+            }
+            return a;
+        }
+
+        let shuffledTerms, shuffledDefs;
+        let selectedLeft = null, selectedRight = null;
+        let matchedLeft, matchedRight;
+        let locked = false;
+
+        function init() {
+            shuffledTerms = shuffle(pairs.map((p, i) => ({ ...p, origIdx: i })));
+            shuffledDefs = shuffle(pairs.map((p, i) => ({ ...p, origIdx: i })));
+            selectedLeft = null;
+            selectedRight = null;
+            matchedLeft = new Array(pairs.length).fill(false);
+            matchedRight = new Array(pairs.length).fill(false);
+            locked = false;
+            const status = document.getElementById('matchStatus');
+            status.textContent = '';
+            status.style.color = '';
+            render();
+        }
+
+        function render() {
+            const termsCol = document.getElementById('termsCol');
+            const defsCol = document.getElementById('defsCol');
+            termsCol.innerHTML = '';
+            defsCol.innerHTML = '';
+
+            shuffledTerms.forEach((item, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'match-item';
+                btn.textContent = item.term;
+                if (matchedLeft[i]) {
+                    btn.classList.add('matched');
+                    btn.disabled = true;
+                } else {
+                    if (selectedLeft === i) btn.classList.add('selected');
+                    if (!locked) btn.addEventListener('click', () => clickLeft(i));
+                }
+                termsCol.appendChild(btn);
+            });
+
+            shuffledDefs.forEach((item, j) => {
+                const btn = document.createElement('button');
+                btn.className = 'match-item';
+                btn.textContent = item.def;
+                if (matchedRight[j]) {
+                    btn.classList.add('matched');
+                    btn.disabled = true;
+                } else {
+                    if (selectedRight === j) btn.classList.add('selected');
+                    if (!locked) btn.addEventListener('click', () => clickRight(j));
+                }
+                defsCol.appendChild(btn);
+            });
+        }
+
+        function clickLeft(i) {
+            if (matchedLeft[i] || locked) return;
+            selectedLeft = selectedLeft === i ? null : i;
+            render();
+            if (selectedLeft !== null && selectedRight !== null) checkMatch();
+        }
+
+        function clickRight(j) {
+            if (matchedRight[j] || locked) return;
+            selectedRight = selectedRight === j ? null : j;
+            render();
+            if (selectedLeft !== null && selectedRight !== null) checkMatch();
+        }
+
+        function checkMatch() {
+            const termItem = shuffledTerms[selectedLeft];
+            const defItem = shuffledDefs[selectedRight];
+
+            if (termItem.origIdx === defItem.origIdx) {
+                matchedLeft[selectedLeft] = true;
+                matchedRight[selectedRight] = true;
+                selectedLeft = null;
+                selectedRight = null;
+                render();
+                if (matchedLeft.every(Boolean)) {
+                    const status = document.getElementById('matchStatus');
+                    status.textContent = 'All matched! Great job!';
+                    status.style.color = '#16a34a';
+                }
+            } else {
+                locked = true;
+                const leftBtns = document.querySelectorAll('#termsCol .match-item');
+                const rightBtns = document.querySelectorAll('#defsCol .match-item');
+                if (leftBtns[selectedLeft]) leftBtns[selectedLeft].classList.add('wrong');
+                if (rightBtns[selectedRight]) rightBtns[selectedRight].classList.add('wrong');
+                setTimeout(() => {
+                    selectedLeft = null;
+                    selectedRight = null;
+                    locked = false;
+                    render();
+                }, 600);
+            }
+        }
+
+        document.getElementById('restartBtn').addEventListener('click', init);
+        init();
+    </script>
+</body>
+</html>

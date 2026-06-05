@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-logo">
+            <a href="/home">
+                <img src="/assets/logo.png" alt="Logo" class="logo-img">
+            </a>
+        </div>
+        <div class="navbar-account">
+            <a href="/account" class="account-link">Account</a>
+        </div>
+    </nav>
+
+    <div class="quiz-container">
+        <div class="quiz-card">
+            <div class="quiz-score" id="quizScore">Score: 0 / 0</div>
+            <p class="quiz-question" id="quizQuestion"></p>
+            <div class="quiz-options" id="quizOptions"></div>
+            <div class="blank-feedback" id="quizFeedback"></div>
+        </div>
+        <div class="flashcard-nav">
+            <button class="nav-btn" id="prevBtn">&#8592;</button>
+            <span class="card-counter" id="cardCounter">1 / 10</span>
+            <button class="nav-btn" id="nextBtn">&#8594;</button>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            { q: "What is the capital of France?", opts: ["London", "Berlin", "Paris", "Madrid"], a: 2 },
+            { q: "What is the largest planet in the solar system?", opts: ["Saturn", "Jupiter", "Neptune", "Uranus"], a: 1 },
+            { q: "What is the chemical symbol for water?", opts: ["CO₂", "H₂O", "O₂", "NaCl"], a: 1 },
+            { q: "Who wrote Romeo and Juliet?", opts: ["Charles Dickens", "Mark Twain", "William Shakespeare", "Homer"], a: 2 },
+            { q: "How many continents are there on Earth?", opts: ["5", "6", "7", "8"], a: 2 },
+            { q: "What is the largest ocean?", opts: ["Atlantic", "Indian", "Arctic", "Pacific"], a: 3 },
+            { q: "How many bones are in the adult human body?", opts: ["186", "196", "206", "216"], a: 2 },
+            { q: "What is the capital of Japan?", opts: ["Seoul", "Beijing", "Tokyo", "Bangkok"], a: 2 },
+            { q: "What is the chemical symbol for gold?", opts: ["Go", "Au", "Ag", "Gd"], a: 1 },
+            { q: "What is the capital of Germany?", opts: ["Munich", "Hamburg", "Frankfurt", "Berlin"], a: 3 },
+        ];
+
+        let current = 0;
+        const answered = new Array(questions.length).fill(null);
+        let score = 0;
+
+        function showQuestion(index) {
+            const q = questions[index];
+            document.getElementById('quizQuestion').textContent = q.q;
+            document.getElementById('cardCounter').textContent = `${index + 1} / ${questions.length}`;
+
+            const optionsEl = document.getElementById('quizOptions');
+            optionsEl.innerHTML = '';
+
+            q.opts.forEach((opt, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'quiz-option';
+                btn.textContent = opt;
+
+                if (answered[index] !== null) {
+                    btn.disabled = true;
+                    if (i === q.a) btn.classList.add('correct');
+                    else if (answered[index] === i) btn.classList.add('wrong');
+                } else {
+                    btn.addEventListener('click', () => {
+                        if (answered[index] !== null) return;
+                        answered[index] = i;
+                        if (i === q.a) score++;
+                        showQuestion(index);
+                    });
+                }
+                optionsEl.appendChild(btn);
+            });
+
+            const feedback = document.getElementById('quizFeedback');
+            if (answered[index] === q.a) {
+                feedback.textContent = 'Correct!';
+                feedback.className = 'blank-feedback correct';
+            } else if (answered[index] !== null) {
+                feedback.textContent = `Wrong. The correct answer is: ${q.opts[q.a]}`;
+                feedback.className = 'blank-feedback wrong';
+            } else {
+                feedback.textContent = '';
+                feedback.className = 'blank-feedback';
+            }
+
+            const answeredCount = answered.filter(a => a !== null).length;
+            document.getElementById('quizScore').textContent = `Score: ${score} / ${answeredCount}`;
+        }
+
+        document.getElementById('prevBtn').addEventListener('click', () => {
+            current = (current - 1 + questions.length) % questions.length;
+            showQuestion(current);
+        });
+
+        document.getElementById('nextBtn').addEventListener('click', () => {
+            current = (current + 1) % questions.length;
+            showQuestion(current);
+        });
+
+        showQuestion(0);
+    </script>
+</body>
+</html>

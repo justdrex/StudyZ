@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Scramble</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-logo">
+            <a href="/home">
+                <img src="/assets/logo.png" alt="Logo" class="logo-img">
+            </a>
+        </div>
+        <div class="navbar-account">
+            <a href="/account" class="account-link">Account</a>
+        </div>
+    </nav>
+
+    <div class="scramble-container">
+        <div class="scramble-card">
+            <p class="scramble-hint" id="scrambleHint"></p>
+            <p class="scramble-word" id="scrambleWord"></p>
+            <input type="text" class="blank-input" id="scrambleInput" placeholder="Type the word...">
+            <button class="blank-check-btn" id="checkBtn">Check</button>
+            <div class="blank-feedback" id="scrambleFeedback"></div>
+        </div>
+        <div class="flashcard-nav">
+            <button class="nav-btn" id="prevBtn">&#8592;</button>
+            <span class="card-counter" id="cardCounter">1 / 10</span>
+            <button class="nav-btn" id="nextBtn">&#8594;</button>
+        </div>
+    </div>
+
+    <script>
+        const words = [
+            { word: "Paris", hint: "Capital of France" },
+            { word: "Jupiter", hint: "Largest planet in the solar system" },
+            { word: "oxygen", hint: "Water is made of hydrogen and this" },
+            { word: "Shakespeare", hint: "Wrote Romeo and Juliet" },
+            { word: "Pacific", hint: "Largest ocean on Earth" },
+            { word: "Tokyo", hint: "Capital of Japan" },
+            { word: "Berlin", hint: "Capital of Germany" },
+            { word: "gravity", hint: "Force that keeps us on Earth" },
+            { word: "photon", hint: "Particle of light" },
+            { word: "mercury", hint: "Closest planet to the Sun" },
+        ];
+
+        function scramble(word) {
+            const letters = word.split('');
+            let shuffled;
+            let attempts = 0;
+            do {
+                shuffled = [...letters];
+                for (let i = shuffled.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+                }
+                attempts++;
+            } while (shuffled.join('').toLowerCase() === word.toLowerCase() && attempts < 20);
+            return shuffled.join('');
+        }
+
+        const scrambled = words.map(w => scramble(w.word));
+        let current = 0;
+
+        function showWord(index) {
+            document.getElementById('scrambleHint').textContent = words[index].hint;
+            document.getElementById('scrambleWord').textContent = scrambled[index];
+            document.getElementById('scrambleInput').value = '';
+            document.getElementById('scrambleInput').disabled = false;
+            document.getElementById('checkBtn').disabled = false;
+            document.getElementById('scrambleFeedback').textContent = '';
+            document.getElementById('scrambleFeedback').className = 'blank-feedback';
+            document.getElementById('cardCounter').textContent = `${index + 1} / ${words.length}`;
+            document.getElementById('scrambleInput').focus();
+        }
+
+        function checkAnswer() {
+            const input = document.getElementById('scrambleInput');
+            const feedback = document.getElementById('scrambleFeedback');
+            const userAnswer = input.value.trim();
+            if (!userAnswer) return;
+            const correct = words[current].word;
+            input.disabled = true;
+            document.getElementById('checkBtn').disabled = true;
+            if (userAnswer.toLowerCase() === correct.toLowerCase()) {
+                feedback.textContent = 'Correct!';
+                feedback.className = 'blank-feedback correct';
+            } else {
+                feedback.textContent = `Wrong. The correct word is: ${correct}`;
+                feedback.className = 'blank-feedback wrong';
+            }
+        }
+
+        document.getElementById('checkBtn').addEventListener('click', checkAnswer);
+        document.getElementById('scrambleInput').addEventListener('keydown', e => {
+            if (e.key === 'Enter') checkAnswer();
+        });
+
+        document.getElementById('prevBtn').addEventListener('click', () => {
+            current = (current - 1 + words.length) % words.length;
+            showWord(current);
+        });
+
+        document.getElementById('nextBtn').addEventListener('click', () => {
+            current = (current + 1) % words.length;
+            showWord(current);
+        });
+
+        showWord(0);
+    </script>
+</body>
+</html>
