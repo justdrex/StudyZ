@@ -14,7 +14,7 @@
             </a>
         </div>
         <div class="navbar-account">
-            <a href="/account" class="account-link" id="navAccountLink">Account</a>
+            <button class="btn btn-secondary" id="signOutBtn" style="font-size:0.95rem">Sign out</button>
         </div>
     </nav>
 
@@ -41,7 +41,7 @@
                     <div class="avatar" id="avatar">U</div>
                     <div class="profile-meta">
                         <div class="profile-name" id="profileNamePreview">User</div>
-                        <div class="profile-email" id="profileEmailPreview">user@example.com</div>
+                        <div class="profile-email" id="profileEmailPreview">—</div>
                     </div>
                 </div>
 
@@ -53,13 +53,14 @@
                         </label>
                         <label>
                             <span>Email</span>
-                            <input id="profileEmail" type="email" placeholder="e.g. adam@email.com" autocomplete="email">
+                            <input id="profileEmail" type="email" disabled style="opacity:0.6;cursor:not-allowed">
                         </label>
                     </div>
                     <div class="actions">
                         <button type="button" class="btn btn-secondary" id="resetProfile">Reset</button>
-                        <button type="submit" class="btn">Save profile</button>
+                        <button type="submit" class="btn" id="saveProfileBtn">Save</button>
                     </div>
+                    <div style="min-height:20px;font-size:0.9rem;font-weight:600;text-align:right;margin-top:4px" id="profileMsg"></div>
                 </form>
             </div>
 
@@ -90,7 +91,7 @@
             <div class="panel">
                 <div class="panel-head">
                     <h2>Stats</h2>
-                    <p>Your learning activity. Will sync from the database.</p>
+                    <p>Your learning activity.</p>
                 </div>
 
                 <div class="kv">
@@ -104,7 +105,7 @@
                     </div>
                     <div class="kv-row">
                         <div class="kv-key">Current streak</div>
-                        <div class="kv-value" id="statStreak">— days</div>
+                        <div class="kv-value" id="statStreak">—</div>
                     </div>
                 </div>
             </div>
@@ -113,7 +114,7 @@
             <div class="panel">
                 <div class="panel-head">
                     <h2>Latest learning prompts</h2>
-                    <p>Saved automatically from the home textbox (last 20).</p>
+                    <p>Saved from the home textbox (last 20).</p>
                 </div>
 
                 <div class="prompt-list" id="promptList"></div>
@@ -125,91 +126,154 @@
         </section>
     </main>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script>
-        const STORAGE_KEYS = {
-            profile: "studyz_profile_v1",
-            subscription: "studyz_subscription_v1",
-            prompts: "studyz_recentPrompts_v1"
-        };
-
-        function safeJsonParse(value, fallback) {
-            try { return value ? JSON.parse(value) : fallback; }
-            catch { return fallback; }
-        }
-
-        function formatDate(iso) {
-            if (!iso) return "—";
-            const d = new Date(iso);
-            if (Number.isNaN(d.getTime())) return "—";
-            return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "2-digit" });
-        }
-
-        function initials(nameOrEmail) {
-            const s = (nameOrEmail || "").trim();
-            if (!s) return "U";
-            const parts = s.split(/\s+/).filter(Boolean);
-            if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
-            return s.slice(0, 2).toUpperCase();
-        }
+        const sb = supabase.createClient(
+            'https://dldbcbixsysxcvthtrqs.supabase.co',
+            'sb_publishable_woDI3ajr1Wgo9usOnQoCmg_QM9ncX7E'
+        );
 
         function setText(id, text) {
             const el = document.getElementById(id);
             if (el) el.textContent = text;
         }
 
-        function loadProfile() {
-            const data = safeJsonParse(localStorage.getItem(STORAGE_KEYS.profile), { name: "", email: "" });
-            document.getElementById("profileName").value = data.name || "";
-            document.getElementById("profileEmail").value = data.email || "";
-            setText("profileNamePreview", data.name?.trim() || "User");
-            setText("profileEmailPreview", data.email?.trim() || "user@example.com");
-            setText("avatar", initials(data.name || data.email));
+        function initials(str) {
+            const s = (str || '').trim();
+            if (!s) return 'U';
+            const parts = s.split(/\s+/).filter(Boolean);
+            if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+            return s.slice(0, 2).toUpperCase();
         }
 
-        function saveProfile() {
-            const payload = {
-                name: document.getElementById("profileName").value.trim(),
-                email: document.getElementById("profileEmail").value.trim()
-            };
-            localStorage.setItem(STORAGE_KEYS.profile, JSON.stringify(payload));
-            loadProfile();
+        function formatDate(iso) {
+            if (!iso) return '—';
+            const d = new Date(iso);
+            if (isNaN(d)) return '—';
+            return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: '2-digit' });
         }
 
-        function loadSubscription() {
-            const data = safeJsonParse(localStorage.getItem(STORAGE_KEYS.subscription), {
-                plan: "Free", status: "Active", renewalIso: ""
-            });
-            setText("currentPlan", data.plan || "Free");
-            setText("subStatus", data.status || "Active");
-            setText("renewalDate", formatDate(data.renewalIso));
-            setText("badge-plan", data.plan || "Free");
-            setText("badge-status", data.status || "Active");
+        function computeStreak(sessions) {
+            if (!sessions || sessions.length === 0) return 0;
+            const dates = Array.from(new Set(sessions.map(s => s.created_at.slice(0, 10)))).sort().reverse();
+            const today = new Date().toISOString().slice(0, 10);
+            const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+            if (dates[0] !== today && dates[0] !== yesterday) return 0;
+            let streak = 1;
+            for (let i = 1; i < dates.length; i++) {
+                const diff = (new Date(dates[i - 1]) - new Date(dates[i])) / 86400000;
+                if (diff === 1) streak++;
+                else break;
+            }
+            return streak;
         }
 
-        function loadPrompts() {
-            const prompts = safeJsonParse(localStorage.getItem(STORAGE_KEYS.prompts), []);
-            const wrap = document.getElementById("promptList");
-            wrap.innerHTML = "";
+        let currentUser = null;
+        let originalDisplayName = '';
 
-            if (!Array.isArray(prompts) || prompts.length === 0) {
-                const empty = document.createElement("div");
-                empty.className = "prompt-empty";
-                empty.textContent = "No prompts yet. Type something on the home page and press Enter.";
+        async function init() {
+            const { data: { session } } = await sb.auth.getSession();
+            if (!session) { window.location.href = '/login'; return; }
+
+            currentUser = session.user;
+
+            // Populate email (read-only, from auth)
+            document.getElementById('profileEmail').value = currentUser.email;
+            setText('profileEmailPreview', currentUser.email);
+
+            await Promise.all([loadProfile(), loadStats(), loadPrompts()]);
+        }
+
+        async function loadProfile() {
+            const { data } = await sb.from('profiles')
+                .select('display_name')
+                .eq('id', currentUser.id)
+                .single();
+
+            const name = data?.display_name || '';
+            originalDisplayName = name;
+            document.getElementById('profileName').value = name;
+            setText('profileNamePreview', name || currentUser.email);
+            setText('avatar', initials(name || currentUser.email));
+        }
+
+        async function saveProfile() {
+            const displayName = document.getElementById('profileName').value.trim();
+            const btn = document.getElementById('saveProfileBtn');
+            const msg = document.getElementById('profileMsg');
+
+            btn.disabled = true;
+            msg.style.color = '';
+            msg.textContent = 'Saving…';
+
+            const { error } = await sb.from('profiles')
+                .update({ display_name: displayName, updated_at: new Date().toISOString() })
+                .eq('id', currentUser.id);
+
+            if (error) {
+                msg.style.color = '#dc2626';
+                msg.textContent = 'Failed to save.';
+            } else {
+                originalDisplayName = displayName;
+                msg.style.color = '#16a34a';
+                msg.textContent = 'Saved!';
+                setText('profileNamePreview', displayName || currentUser.email);
+                setText('avatar', initials(displayName || currentUser.email));
+                setTimeout(() => { msg.textContent = ''; }, 2000);
+            }
+            btn.disabled = false;
+        }
+
+        async function loadStats() {
+            const { data: sessions } = await sb.from('game_sessions')
+                .select('score, total, created_at')
+                .eq('user_id', currentUser.id);
+
+            if (!sessions || sessions.length === 0) {
+                setText('statGames', '0');
+                setText('statCorrect', '0');
+                setText('statStreak', '0 days');
+                return;
+            }
+
+            const totalGames = sessions.length;
+            const totalCorrect = sessions.reduce((sum, s) => sum + (s.score || 0), 0);
+            const streak = computeStreak(sessions);
+
+            setText('statGames', totalGames);
+            setText('statCorrect', totalCorrect);
+            setText('statStreak', `${streak} ${streak === 1 ? 'day' : 'days'}`);
+        }
+
+        async function loadPrompts() {
+            const { data: prompts } = await sb.from('prompts')
+                .select('text, created_at')
+                .eq('user_id', currentUser.id)
+                .order('created_at', { ascending: false })
+                .limit(20);
+
+            const wrap = document.getElementById('promptList');
+            wrap.innerHTML = '';
+
+            if (!prompts || prompts.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'prompt-empty';
+                empty.textContent = 'No prompts yet. Type something on the home page and press Enter.';
                 wrap.appendChild(empty);
                 return;
             }
 
-            prompts.slice(0, 20).forEach((p) => {
-                const row = document.createElement("div");
-                row.className = "prompt-item";
+            prompts.forEach(p => {
+                const row = document.createElement('div');
+                row.className = 'prompt-item';
 
-                const text = document.createElement("div");
-                text.className = "prompt-text";
-                text.textContent = p?.text || "";
+                const text = document.createElement('div');
+                text.className = 'prompt-text';
+                text.textContent = p.text;
 
-                const meta = document.createElement("div");
-                meta.className = "prompt-meta";
-                meta.textContent = formatDate(p?.iso);
+                const meta = document.createElement('div');
+                meta.className = 'prompt-meta';
+                meta.textContent = formatDate(p.created_at);
 
                 row.appendChild(text);
                 row.appendChild(meta);
@@ -217,22 +281,27 @@
             });
         }
 
-        document.getElementById("profileForm").addEventListener("submit", (e) => {
+        document.getElementById('profileForm').addEventListener('submit', (e) => {
             e.preventDefault();
             saveProfile();
         });
-        document.getElementById("resetProfile").addEventListener("click", () => {
-            localStorage.removeItem(STORAGE_KEYS.profile);
-            loadProfile();
+
+        document.getElementById('resetProfile').addEventListener('click', () => {
+            document.getElementById('profileName').value = originalDisplayName;
+            document.getElementById('profileMsg').textContent = '';
         });
-        document.getElementById("clearPrompts").addEventListener("click", () => {
-            localStorage.removeItem(STORAGE_KEYS.prompts);
+
+        document.getElementById('clearPrompts').addEventListener('click', async () => {
+            await sb.from('prompts').delete().eq('user_id', currentUser.id);
             loadPrompts();
         });
 
-        loadProfile();
-        loadSubscription();
-        loadPrompts();
+        document.getElementById('signOutBtn').addEventListener('click', async () => {
+            await sb.auth.signOut();
+            window.location.href = '/login';
+        });
+
+        init();
     </script>
 </body>
 </html>
